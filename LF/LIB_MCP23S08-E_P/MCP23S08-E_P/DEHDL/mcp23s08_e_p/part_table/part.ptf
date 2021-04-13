@@ -1,0 +1,11 @@
+FILE_TYPE = MULTI_PHYS_TABLE;
+
+PART 'MCP23S08_E_P'
+CLASS = IC
+{========================================================================================}
+:"MANUFACTURER_NAME", "MANUFACTURER_PART_NUMBER"= "PART_NUMBER", "JEDEC_TYPE", "PACK_TYPE", "MOUSER_PART_NUMBER", "MOUSER_PRICE/STOCK", "ARROW_PART_NUMBER", "ARROW_PRICE/STOCK", "DESCRIPTION", "DATASHEET", "HEIGHT";
+{========================================================================================}
+ "Microchip", "MCP23S08-E/P" (!) = "", "DIP794W56P254L2286H533Q18N", "Dual-In-Line Packages", "579-MCP23S08-E/P", "https://www.mouser.co.uk/ProductDetail/Microchip-Technology/MCP23S08-E-P/?qs=%2FsmpkzDYgMyi%252BLRInJoBRg%3D%3D", "MCP23S08-E/P", "https://www.arrow.com/en/products/mcp23s08-ep/microchip-technology", "8 Bit Expander", "http://uk.rs-online.com/web/p/products/1445721", "5.334 mm"
+END_PART
+
+END.

@@ -1,0 +1,9 @@
+EESchema-DOCLIB  Version 2.0
+#
+$CMP MCP23S08-E_P
+D 8 Bit Expander
+K
+F http://uk.rs-online.com/web/p/products/1445721
+$ENDCMP
+#
+#End Doc Library

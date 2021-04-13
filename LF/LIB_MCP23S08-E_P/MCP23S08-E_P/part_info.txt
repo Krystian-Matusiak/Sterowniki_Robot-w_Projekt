@@ -1,0 +1,9 @@
+Manufacturer=Microchip
+PartNumber=MCP23S08-E/P
+PartCategory=Integrated Circuit
+PackageCategory=Dual-In-Line Packages
+PinCount=18
+Version=3.1
+Released=2017-01-11 17:13:05
+Downloaded=2021-03-20 14:10:05
+3D=Y

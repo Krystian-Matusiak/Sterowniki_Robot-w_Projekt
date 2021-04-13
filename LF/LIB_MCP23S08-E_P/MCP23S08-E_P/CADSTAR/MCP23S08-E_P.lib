@@ -1,0 +1,18 @@
+.MCP23S08-E_P :1 ;8 Bit Expander
+DIP794W56P254L2286H533Q18N
+*STM IC
+*NGS
+*PLB 1="SCK" 2="SI" 3="SO" 4="A1" 5="A0" 6="'RESET'" 7="'CS'" 8="INT" 9="VSS" 10="GP0" 11="GP1" 12="GP2" 13="GP3" 14="GP4" 15="GP5" 16="GP6" 17="GP7" 18="VDD"
+*MXP 18
+*DFN MCP23S08-E_P
+~!Manufacturer_Name (Microchip)
+~!Manufacturer_Part_Number (MCP23S08-E/P)
+~!Mouser Part Number (579-MCP23S08-E/P)
+~!Link Mouser Price/Stock (https://www.mouser.co.uk/ProductDetail/Microchip-Technology/MCP23S08-E-P/?qs=%2FsmpkzDYgMyi%252BLRInJoBRg%3D%3D)
+~!Arrow Part Number (MCP23S08-E/P)
+~!Link Arrow Price/Stock (https://www.arrow.com/en/products/mcp23s08-ep/microchip-technology)
+~!Link Datasheet (http://uk.rs-online.com/web/p/products/1445721)
+~!Height (5.334mm)
+~!3D_Model (MCP23S08-E_P)
+MCP23S08-E_P
+1.1!U 2.1!U 3.1!U 4.1!U 5.1!U 6.1!U 7.1!U 8.1!U 9.1!U 18.1!U 17.1!U 16.1!U 15.1!U 14.1!U 13.1!U 12.1!U 11.1!U 10.1!U 
