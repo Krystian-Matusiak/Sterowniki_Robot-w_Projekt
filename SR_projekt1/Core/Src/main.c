@@ -19,6 +19,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "adc.h"
 #include "i2c.h"
 #include "spi.h"
 #include "tim.h"
@@ -38,37 +39,8 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define MCP_IODIR		0x00
-#define MCP_IPOL		0x01
-#define MCP_GPINTEN		0x02
-#define MCP_DEFVAL		0x03
-#define MCP_INTCON		0x04
-#define MCP_IOCON		0x05
-#define MCP_GPPU		0x06
-#define MCP_INTF		0x07
-#define MCP_INTCAP		0x08
-#define MCP_GPIO		0x09
-#define MCP_OLAT		0x0a
 
-#define OUT1H HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_SET)
-#define OUT1L HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_RESET)
 
-#define OUT2H HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_SET)
-#define OUT2L HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_RESET)
-
-#define OUT3H HAL_GPIO_WritePin(GPIOA, GPIO_PIN_11, GPIO_PIN_SET)
-#define OUT3L HAL_GPIO_WritePin(GPIOA, GPIO_PIN_11, GPIO_PIN_RESET)
-
-#define OUT4H HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET)
-#define OUT4L HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET)
-
-#define OUT5H HAL_GPIO_WritePin(GPIOF, GPIO_PIN_1, GPIO_PIN_SET)
-#define OUT5L HAL_GPIO_WritePin(GPIOF, GPIO_PIN_1, GPIO_PIN_RESET)
-
-#define OUT6H HAL_GPIO_WritePin(GPIOF, GPIO_PIN_0, GPIO_PIN_SET)
-#define OUT6L HAL_GPIO_WritePin(GPIOF, GPIO_PIN_0, GPIO_PIN_RESET)
-
-#define DEL 1000
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -91,11 +63,113 @@ void SystemClock_Config(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-uint8_t spi_sendrecv(uint8_t byte){
-	uint8_t answer;
-	HAL_SPI_TransmitReceive(&hspi1, &byte, &answer, 1, HAL_MAX_DELAY);
-	return answer;
+volatile uint16_t pwm_m1;
+volatile uint16_t pwm_m2;
+
+volatile uint16_t dir1_m1;
+volatile uint16_t dir2_m1;
+
+volatile uint16_t dir1_m2;
+volatile uint16_t dir2_m2;
+
+volatile uint16_t czuj1;
+volatile uint16_t czuj2;
+volatile uint16_t czuj3;
+volatile uint16_t czuj4;
+volatile uint16_t czuj5;
+volatile uint16_t czuj6;
+
+volatile uint16_t batt;
+
+//////////////////////////////////////////////////////////////////////////////
+// Funkcje ustawiające kierunek ruchu pierwszego silnika
+
+void setDIR1_M1(){
+	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, SET);
 }
+void resetDIR1_M1(){
+	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, RESET);
+}
+void setDIR2_M1(){
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, SET);
+}
+void resetDIR2_M1(){
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, RESET);
+}
+
+void setM1_Forward(){
+	resetDIR1_M1();
+	setDIR2_M1();
+}
+
+void setM1_Backward(){
+	setDIR1_M1();
+	resetDIR2_M1();
+}
+//////////////////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////////////////////
+// Funkcje ustawiające kierunek ruchu drugiego silnika
+
+void setDIR1_M2(){
+	HAL_GPIO_WritePin(GPIOF, GPIO_PIN_0, SET);
+}
+void resetDIR1_M2(){
+	HAL_GPIO_WritePin(GPIOF, GPIO_PIN_0, RESET);
+}
+void setDIR2_M2(){
+	HAL_GPIO_WritePin(GPIOF, GPIO_PIN_1, SET);
+}
+void resetDIR2_M2(){
+	HAL_GPIO_WritePin(GPIOF, GPIO_PIN_1, RESET);
+}
+
+void setM2_Forward(){
+	resetDIR1_M2();
+	setDIR2_M2();
+}
+
+void setM2_Backward(){
+	setDIR1_M2();
+	resetDIR2_M2();
+}
+//////////////////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////////////////////
+// Funkcje ustawiające wypełnienie PWM'ów obu silników
+
+void setPWM_Motor1(int wypelnienie){
+    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, wypelnienie);
+}
+
+void setPWM_Motor2(int wypelnienie){
+    __HAL_TIM_SET_COMPARE(&htim16, TIM_CHANNEL_1, wypelnienie);
+}
+
+//////////////////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////////////////////
+// Dokonywanie pomiarów z przetworników analogowo cyfrowych
+
+void HAL_ADC_ConvCptlCallback(ADC_HandleTypeDef * hadc){
+	  HAL_ADC_Start_IT(&hadc1);
+
+	  if(hadc == &hadc1){
+		adc_value = HAL_ADC_GetValue(&hadc1);
+		adc_flag = 1;
+	  }
+	  if(hadc == &hadc2){
+		adc_value = HAL_ADC_GetValue(&hadc2);
+		adc_flag = 1;
+	  }
+	  HAL_ADC_Start_IT(&hadc1);
+
+}
+
+
+
+//////////////////////////////////////////////////////////////////////////////
+// Funkcje obsługujące wymianę danych poprzez SPI
 
 uint8_t mcp_read_reg(uint8_t addr){
 	uint8_t tx_buf[] = { 0x41, addr, 0xFF };
@@ -115,6 +189,10 @@ void mcp_write_reg(uint8_t addr, uint8_t value){
 	HAL_SPI_Transmit(&hspi1, tx_buf, 3, HAL_MAX_DELAY);
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
 }
+
+//////////////////////////////////////////////////////////////////////////////
+
+
 
 /* USER CODE END 0 */
 
@@ -149,18 +227,15 @@ int main(void)
   MX_TIM16_Init();
   MX_TIM17_Init();
   MX_I2C1_Init();
-  MX_TIM1_Init();
   MX_SPI1_Init();
+  MX_ADC2_Init();
+  MX_ADC1_Init();
+  MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
-
-	 __HAL_SPI_ENABLE(&hspi1);
-	 //mcp_write_reg(MCP_IODIR, ~0x01);
-	 mcp_write_reg(MCP_IODIR, 0xFF);
-	 mcp_write_reg(MCP_GPPU, 0xFF);
-
-	 volatile int dly=0;
-	 uint8_t REG;
-	 uint8_t order[] ={ 0x01 , 0x02 , 0x04 , 0x08 , 0x10 , 0x20 , 0x40 , 0x80 };
+  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_3);
+  HAL_TIM_PWM_Start(&htim16, TIM_CHANNEL_1);
+  HAL_ADC_Start_IT(&hadc1);
+  HAL_ADC_Start_IT(&hadc2);
 
 
   /* USER CODE END 2 */
@@ -169,100 +244,9 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  /*
-	  for( int i=0x00 ; i<=0x07 ; i++){
-	  			mcp_write_reg(MCP_OLAT, i);
-	  			HAL_Delay(DEL);
-	  }*/
-
-	  REG = mcp_read_reg(MCP_GPIO);
-	   	  // Czujnik nr 1
-	  for(int i=0 ; i<6 ; i++){
-		  if((mcp_read_reg(MCP_GPIO) & order[i]) == order[i] )
-			  switch(i){
-			  case 0:
-				  OUT1H;
-				  break;
-			  case 1:
-				  OUT2H;
-				  break;
-			  case 2:
-				  OUT3H;
-				  break;
-			  case 3:
-				  OUT4H;
-				  break;
-			  case 4:
-				  OUT5H;
-				  break;
-			  case 5:
-				  OUT6H;
-				  break;
-			  }
-		  else
-			  switch(i){
-			  case 0:
-				  OUT1L;
-				  break;
-			  case 1:
-				  OUT2L;
-				  break;
-			  case 2:
-				  OUT3L;
-				  break;
-			  case 3:
-				  OUT4L;
-				  break;
-			  case 4:
-				  OUT5L;
-				  break;
-			  case 5:
-				  OUT6L;
-				  break;
-			  }
-	  }
 
 
-	  /*  // Czujnik nr 2
-	  for(int i=0 ; i<8 ; i++){
-	  		  if(REG == ((1<<i)||1) )
-	  			  OUT2H;
-	  		  else
-	  			  OUT2L;
-	  	  }
 
-		 // Czujnik nr 3
-	  for(int i=0 ; i<8 ; i++){
-	  		  if(REG == ((1<<i)||1) )
-	  			  OUT3H;
-	  		  else
-	  			  OUT3L;
-	  	  }
-
-		 // Czujnik nr 4
-	  for(int i=0 ; i<8 ; i++){
-	  		  if(REG == ((1<<i)||1) )
-	  			  OUT4H;
-	  		  else
-	  			  OUT4L;
-	  	  }
-
-		 // Czujnik nr 5
-	  for(int i=0 ; i<8 ; i++){
-	  		  if(REG == ((1<<i)||1) )
-	  			  OUT5H;
-	  		  else
-	  			  OUT5L;
-	  	  }
-
-		 // Czujnik nr 6
-	  for(int i=0 ; i<8 ; i++){
-	  		  if(REG == ((1<<i)||1) )
-	  			  OUT6H;
-	  		  else
-	  			  OUT6L;
-	  	  }
-*/
 
 
     /* USER CODE END WHILE */
@@ -289,7 +273,9 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
+  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
+  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL10;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -298,18 +284,18 @@ void SystemClock_Config(void)
   */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
-  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV4;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1) != HAL_OK)
   {
     Error_Handler();
   }
-  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_I2C1|RCC_PERIPHCLK_TIM1;
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_I2C1|RCC_PERIPHCLK_ADC12;
+  PeriphClkInit.Adc12ClockSelection = RCC_ADC12PLLCLK_DIV1;
   PeriphClkInit.I2c1ClockSelection = RCC_I2C1CLKSOURCE_HSI;
-  PeriphClkInit.Tim1ClockSelection = RCC_TIM1CLK_HCLK;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
     Error_Handler();

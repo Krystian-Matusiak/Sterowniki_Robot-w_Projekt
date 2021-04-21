@@ -66,13 +66,13 @@ void Error_Handler(void);
 #define CZ_1_GPIO_Port GPIOA
 #define CZ_2_Pin GPIO_PIN_1
 #define CZ_2_GPIO_Port GPIOA
-#define CZ_3_Pin GPIO_PIN_2
+#define CZ_3_Pin GPIO_PIN_3
 #define CZ_3_GPIO_Port GPIOA
-#define CZ_4_Pin GPIO_PIN_3
+#define CZ_4_Pin GPIO_PIN_4
 #define CZ_4_GPIO_Port GPIOA
-#define CZ_5_Pin GPIO_PIN_4
+#define CZ_5_Pin GPIO_PIN_5
 #define CZ_5_GPIO_Port GPIOA
-#define CZ_6_Pin GPIO_PIN_5
+#define CZ_6_Pin GPIO_PIN_6
 #define CZ_6_GPIO_Port GPIOA
 #define BATT_IN_Pin GPIO_PIN_7
 #define BATT_IN_GPIO_Port GPIOA

@@ -31,13 +31,6 @@
 /* USER CODE END 1 */
 
 /** Configure pins
-     PA0   ------> SharedAnalog_PA0
-     PA1   ------> SharedAnalog_PA1
-     PA2   ------> SharedAnalog_PA2
-     PA3   ------> SharedAnalog_PA3
-     PA4   ------> SharedAnalog_PA4
-     PA5   ------> SharedAnalog_PA5
-     PA7   ------> SharedAnalog_PA7
 */
 void MX_GPIO_Init(void)
 {
@@ -64,14 +57,6 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : PAPin PAPin PAPin PAPin
-                           PAPin PAPin PAPin */
-  GPIO_InitStruct.Pin = CZ_1_Pin|CZ_2_Pin|CZ_3_Pin|CZ_4_Pin
-                          |CZ_5_Pin|CZ_6_Pin|BATT_IN_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PtPin */
   GPIO_InitStruct.Pin = DIR1_M1_Pin;
