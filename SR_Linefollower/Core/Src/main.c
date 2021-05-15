@@ -214,7 +214,7 @@ int main(void)
   int prev_error=0;
   int error=0;
   int ilosc_wykryc=0;
-  int waga[] = { -5 , -3 , -1 , 1 , 3 , 5 };
+  int waga[] = { -10 , -7 , -5 , 5 , 7 , 10 };
 
   int Kp = 2;
   int Kd = 1;
@@ -230,8 +230,8 @@ int main(void)
   int regulacja=0;
 
   /* Wartości, dla których silniki kręcą się z tę samą szybkością*/
-  int setpoint_M1 = 22;
-  int setpoint_M2 = 15;
+  int setpoint_M1 = 40;
+  int setpoint_M2 = 33;
 
   int prog = 150;
 
@@ -293,10 +293,10 @@ int main(void)
 		  prev_error = error;
 	  }
 	  else{
-		  if(prev_error < -3)
-			  error = -6;
-		  else if(prev_error > 3)
-			  error= 6;
+		  if(prev_error < -7)
+			  error = -12;
+		  else if(prev_error > 7)
+			  error= 12;
 		  else
 			  error=0;
 	  }
