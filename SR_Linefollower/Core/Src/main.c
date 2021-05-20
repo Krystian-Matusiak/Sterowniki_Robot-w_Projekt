@@ -30,6 +30,8 @@
 #include <stdio.h>
 
 #define CONV_NUM 3
+#define THRESHOLD 150
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -60,6 +62,17 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+typedef struct{
+
+	volatile uint8_t Czujniki[6];
+
+
+} Linefollower;
+
+
+
+
 volatile uint16_t czuj1;
 volatile uint16_t czuj2;
 volatile uint16_t czuj3;
@@ -144,6 +157,17 @@ void setSTBY(){
 	HAL_GPIO_WritePin(STBY_GPIO_Port, STBY_Pin, SET);
 }
 
+//////////////////////////////////////////////////////////////////////////////
+// Analizowanie danych z czujników
+
+void setSensor(uint8_t ADC , uint8_t * CZUJNIK){
+	if( ADC > THRESHOLD )
+		*CZUJNIK=1;
+	else
+		*CZUJNIK=0;
+}
+
+
 /*
 int _write(int file, char *ptr, int len){
 	  HAL_UART_Transmit( &huart1, ptr, len,50 );
@@ -211,33 +235,146 @@ int main(void)
   setM1_Forward();
   setM2_Forward();
 
+  Linefollower LF;
   int prev_error=0;
   int error=0;
   int ilosc_wykryc=0;
+
   int waga[] = { -10 , -7 , -5 , 5 , 7 , 10 };
 
   int Kp = 2;
   int Kd = 1;
 
+  /*
   uint8_t Test1;
   uint8_t Test2;
   uint8_t Test3;
   uint8_t Test4;
   uint8_t Test5;
   uint8_t Test6;
+*/
 
   int rozniczka=0;
   int regulacja=0;
 
   /* Wartości, dla których silniki kręcą się z tę samą szybkością*/
-  int setpoint_M1 = 40;
-  int setpoint_M2 = 33;
+  int roznica=7;
+  int setPoint = 20;
+  int setpoint_M1 = setPoint + roznica;
+  int setpoint_M2 = setPoint;
 
   int prog = 150;
+  int MODE = 0;
+
+  volatile uint8_t TX[11] = {10 , 22 , 33 , 44, 55 , 66 , 123 , 1 , 255 , 1 , 97};
+  volatile uint8_t RX[11];
 
 
   while (1)
   {
+
+	  	if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_9) == GPIO_PIN_RESET){
+	  		HAL_SPI_TransmitReceive(&hspi1, TX, RX ,11, HAL_MAX_DELAY);
+	  	}
+		  HAL_Delay(50);
+
+	  MODE = RX[5];
+	  if(MODE == 1){
+
+		  for(int i=0 ; i<3 ; i++)
+			  setSensor( adc1[i] , &LF.Czujniki[i] );
+
+		  for(int i=0 ; i<3 ; i++)
+			  setSensor( adc2[i] , &LF.Czujniki[i+3] );
+
+
+		  ///////////////////////////////////////////////////
+		  // PID
+		  for(int n=0; n<6 ; n++ ){
+			  error += LF.Czujniki[n]*waga[n];
+			  ilosc_wykryc += LF.Czujniki[n];
+		  }
+
+		  if(ilosc_wykryc != 0 ){
+			  error /= ilosc_wykryc;
+			  prev_error = error;
+		  }
+		  else{
+			  if(prev_error < -7)
+				  error = -12;
+			  else if(prev_error > 7)
+				  error= 12;
+			  else
+				  error=0;
+		  }
+
+		  rozniczka = error - prev_error;
+		  prev_error = error;
+		  regulacja = Kp*error + Kd*rozniczka;
+
+		  setPWM_Motor1( setpoint_M1 - regulacja );
+		  setPWM_Motor2( setpoint_M2 + regulacja );
+
+		  ilosc_wykryc=0;
+		  error=0;
+
+		  ///////////////////////////////////////////////////
+		  // Wysyłanie danych po SPI
+
+
+		  TX[0] = adc1[0];
+		  TX[1] = adc1[1];
+		  TX[2] = adc1[2];
+		  TX[3] = adc2[0];
+		  TX[4] = adc2[1];
+		  TX[5] = adc2[2];
+		  TX[6] =  setpoint_M1 - regulacja;
+		  TX[7] = 1;
+		  TX[8] =  setpoint_M1 + regulacja;
+		  TX[9] = 1;
+		  TX[10] = 96;
+
+	//  	if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_9) == GPIO_PIN_RESET);
+	//  		HAL_SPI_Transmit(&hspi1, TX, 11, HAL_MAX_DELAY);
+		  HAL_Delay(50);
+
+
+		  HAL_ADC_Start_DMA(&hadc1, adc1, CONV_NUM);
+		  HAL_ADC_Start_DMA(&hadc2, adc2, CONV_NUM);
+	  }
+	  else if(MODE == 0){
+
+		  if(RX[1]==1)
+			  setM1_Forward();
+		  else if(RX[1]==0)
+			  setM1_Backward();
+
+		  if(RX[3]==1)
+			  setM2_Forward();
+		  else if(RX[3]==0)
+			  setM2_Backward();
+
+		  setPWM_Motor1(RX[0]);
+		  setPWM_Motor2(RX[2]);
+
+	  }
+
+
+	  ///////////////////////////////////////////////////////////////////
+
+
+		/*
+	      printf("Czuj1 %d\r\n" , adc1[0]);
+		  printf("Czuj2 %d\r\n" , adc1[1]);
+		  printf("Czuj3 %d\r\n" , adc1[2]);
+		  printf("Czuj4 %d\r\n" , adc2[0]);
+		  printf("Czuj5 %d\r\n" , adc2[1]);
+		  printf("Czuj6 %d\r\n\n" , adc2[2]);
+
+		  */
+	  /*
+
+
 	  //  Czujnik 1
 	  if(adc1[0] > prog)
 		  Czujniki[0]=1;
@@ -255,6 +392,9 @@ int main(void)
 		  Czujniki[2]=1;
 	  else
 		  Czujniki[2]=0;
+
+
+
 
 	  //  Czujnik 4
 	  if(adc2[0] > prog)
@@ -274,57 +414,18 @@ int main(void)
 	  else
 		  Czujniki[5]=0;
 
+		*/
 
+
+	  /*
 	  Test1 = adc1[0];
 	  Test2 = adc1[1];
 	  Test3 = adc1[2];
 	  Test4 = adc2[0];
 	  Test5 = adc2[1];
 	  Test6 = adc2[2];
+*/
 
-
-	  for(int n=0; n<6 ; n++ ){
-		  error += Czujniki[n]*waga[n];
-		  ilosc_wykryc += Czujniki[n];
-	  }
-
-	  if(ilosc_wykryc != 0 ){
-		  error /= ilosc_wykryc;
-		  prev_error = error;
-	  }
-	  else{
-		  if(prev_error < -7)
-			  error = -12;
-		  else if(prev_error > 7)
-			  error= 12;
-		  else
-			  error=0;
-	  }
-
-	  rozniczka = error - prev_error;
-	  prev_error = error;
-	  regulacja = Kp*error + Kd*rozniczka;
-
-	  setPWM_Motor1( setpoint_M1 - regulacja );
-	  setPWM_Motor2( setpoint_M2 + regulacja );
-
-	  ilosc_wykryc=0;
-	  error=0;
-
-	  HAL_ADC_Start_DMA(&hadc1, adc1, CONV_NUM);
-	  HAL_ADC_Start_DMA(&hadc2, adc2, CONV_NUM);
-	  HAL_Delay(20);
-
-
-		/*
-	      printf("Czuj1 %d\r\n" , adc1[0]);
-		  printf("Czuj2 %d\r\n" , adc1[1]);
-		  printf("Czuj3 %d\r\n" , adc1[2]);
-		  printf("Czuj4 %d\r\n" , adc2[0]);
-		  printf("Czuj5 %d\r\n" , adc2[1]);
-		  printf("Czuj6 %d\r\n\n" , adc2[2]);
-
-		  */
 
     /* USER CODE END WHILE */
 
@@ -351,7 +452,7 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
-  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL4;
+  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL16;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -362,10 +463,10 @@ void SystemClock_Config(void)
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
   {
     Error_Handler();
   }
