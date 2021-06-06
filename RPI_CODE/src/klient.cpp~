@@ -1,0 +1,72 @@
+#include <iostream>
+#include <iomanip>
+#include <cstring>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+
+#define PORT          6000
+
+using namespace std;
+
+
+
+
+int Nadaj(int Sk2Client, const char *Napis)
+{
+  ssize_t  IlWyslanych;
+  ssize_t  IlDoWyslania = (ssize_t) strlen(Napis);
+
+  while ((IlWyslanych = write(Sk2Client,Napis,IlDoWyslania)) > 0) {
+    IlDoWyslania -= IlWyslanych;
+    Napis += IlWyslanych;
+  }
+  if (IlWyslanych < 0) {
+    cerr << "*** Blad przeslania napisu." << endl;
+  }
+  return 0;
+}
+
+
+
+
+int main()
+{
+  int                 GnNadawania; 
+  struct sockaddr_in  DaneAdSerw;
+
+
+  bzero((char *)&DaneAdSerw,sizeof(DaneAdSerw));
+
+  DaneAdSerw.sin_family = AF_INET;
+  DaneAdSerw.sin_addr.s_addr = inet_addr("127.0.0.1");
+  DaneAdSerw.sin_port = htons(PORT);
+
+
+  GnNadawania = socket(AF_INET,SOCK_STREAM,0);
+
+  if (GnNadawania < 0) {
+     cerr << "*** Blad otwarcia gniazda." << endl;
+     return 1;
+  }
+
+
+  if (connect(GnNadawania,(struct sockaddr*)&DaneAdSerw,sizeof(DaneAdSerw)) < 0)
+   {
+     cerr << "*** Brak mozliwosci polaczenia do portu: " << PORT << endl;
+     return 1;
+   }
+
+# define ROZM_NAPISU    300
+  char  Napis[ROZM_NAPISU+1];
+
+  do {
+    cout << "> " << flush;
+    cin >> setw(ROZM_NAPISU) >> Napis;
+    Nadaj(GnNadawania,Napis);
+  } while (strcmp("koniec",Napis) && strcmp("exit",Napis));
+
+  close(GnNadawania);
+}
